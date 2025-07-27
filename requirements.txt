@@ -1,0 +1,19 @@
+# GUI Framework
+tkinter
+
+# System and file operations (built-in modules)
+# os
+# subprocess
+# random
+# re
+# pathlib
+# threading
+
+# Note: tkinter is usually included with Python installation
+# If tkinter is not available, install python-tk:
+# sudo apt-get install python3-tk (Ubuntu/Debian)
+# or reinstall Python with tkinter support
+
+# External dependencies (not Python packages):
+# - ffmpeg: Required for video processing
+# - ffprobe: Usually comes with ffmpeg
