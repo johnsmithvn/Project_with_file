@@ -1,6 +1,9 @@
 # GUI Framework
 tkinter
 
+# Audio metadata processing
+mutagen>=1.45.0
+
 # System and file operations (built-in modules)
 # os
 # subprocess

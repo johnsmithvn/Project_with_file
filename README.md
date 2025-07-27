@@ -18,13 +18,41 @@ Công cụ đổi tên file ảnh manga với GUI thân thiện.
 ### 2. 🎬 Video Thumbnail Generator (`video_thumbnail_generator.py`)
 Tạo thumbnail tự động cho video bằng ffmpeg.
 
+### 3. 🎵 Audio Thumbnail Generator (`audio_thumbnail_generator.py`)
+Extract thumbnail từ metadata của file nhạc (album art).
+
 **Tính năng:**
-- Tự động scan tất cả video trong thư mục và thư mục con
-- Tạo thumbnail từ timestamp ngẫu nhiên
-- Hỗ trợ nhiều định dạng video: mp4, mkv, avi, mov, wmv, flv, webm, m4v
-- Tùy chỉnh kích thước thumbnail
+- Extract album art từ file nhạc (MP3, FLAC, M4A, OGG, v.v.)
+- Hỗ trợ format ảnh: JPG, PNG tự động nhận diện
+- Tạo thumbnail đại diện cho folder từ bài hát đầu tiên
+- Lựa chọn vị trí lưu: folder .thumbnail hoặc cùng cấp với nhạc
 - Bỏ qua file đã có thumbnail
-- Giao diện GUI với log chi tiết
+- Giao diện GUI với progress tracking
+
+### 4. 🔧 Advanced Rename Tool (`advanced_rename_tool.py`)
+Công cụ đổi tên file nâng cao với nhiều chế độ và preview.
+
+**Tính năng:**
+- Đổi tên theo 4 chế độ: số thứ tự, prefix, suffix, tìm & thay thế
+- Hỗ trợ nhiều loại file: ảnh, video, audio, documents
+- Preview trước khi đổi tên thực sự
+- Windows natural sorting (1, 2, 3, 10, 11...)
+- Backup tự động trước khi đổi tên
+- Undo để hoàn tác lần đổi tên cuối
+- Format số linh hoạt: 001, 01, 1
+- Reset counter theo folder hoặc global
+
+### 5. 📊 Folder Analyzer (`folder_analyzer.py`)
+Phân tích cấu trúc thư mục chi tiết và xuất báo cáo.
+
+**Tính năng:**
+- Phân tích cấu trúc thư mục đến 15 cấp
+- Thống kê chi tiết: số file, kích thước, ngày tạo/sửa
+- Hiển thị dạng cây phân cấp
+- Xuất báo cáo: CSV, JSON, TXT
+- Tìm thư mục rỗng và thống kê
+- Copy path và mở folder trực tiếp
+- Progress tracking cho folder lớn
 
 ## 🔧 Cài đặt
 
@@ -118,8 +146,58 @@ python video_thumbnail_generator.py
 **Cách dùng:**
 1. Click "Browse" và chọn thư mục chứa video
 2. Điều chỉnh tùy chọn (kích thước, thời gian random...)
-3. Click "Scan Video" để xem danh sách video
-4. Click "Generate Thumbnails" để tạo thumbnail
+3. Chọn vị trí thumbnail: folder .thumbnail hoặc cùng cấp
+4. Click "Scan Video" để xem danh sách video
+5. Click "Generate Thumbnails" để tạo thumbnail
+
+### Audio Thumbnail Generator
+
+```bash
+python audio_thumbnail_generator.py
+```
+
+**Cách dùng:**
+1. Click "Browse" và chọn thư mục chứa nhạc
+2. Điều chỉnh tùy chọn:
+   - Bỏ qua file đã có thumbnail
+   - Tạo thumbnail đại diện cho folder
+   - Chọn vị trí lưu: folder .thumbnail hoặc cùng cấp
+3. Click "Scan Audio" để xem danh sách file nhạc
+4. Click "Extract Thumbnails" để extract album art
+
+### Advanced Rename Tool
+
+```bash
+python advanced_rename_tool.py
+```
+
+**Cách dùng:**
+1. Click "Browse" và chọn thư mục chứa file cần đổi tên
+2. Chọn loại file: Images, Videos, Audio, Documents, All Files
+3. Chọn chế độ đổi tên:
+   - **Sequential**: Đánh số thứ tự (001, 002...)
+   - **Prefix**: Thêm text vào đầu tên
+   - **Suffix**: Thêm text vào cuối tên (trước extension)
+   - **Replace**: Tìm và thay thế text trong tên
+4. Điều chỉnh tùy chọn (format số, giữ tên gốc, reset counter...)
+5. Click "Preview" để xem trước kết quả
+6. Click "Rename" hoặc "Backup & Rename" để thực hiện
+
+### Folder Analyzer
+
+```bash
+python folder_analyzer.py
+```
+
+**Cách dùng:**
+1. Click "Browse" và chọn thư mục gốc cần phân tích
+2. Điều chỉnh tùy chọn:
+   - Độ sâu tối đa (1-15 cấp)
+   - Thông tin cần thu thập (file count, size, dates, permissions)
+   - Định dạng xuất (CSV, JSON, TXT)
+3. Click "Analyze" để bắt đầu phân tích
+4. Xem kết quả trong cây thư mục và bảng thống kê
+5. Click "Export" để xuất báo cáo
 
 ## 📁 Cấu trúc thư mục
 
@@ -128,7 +206,12 @@ Project_file/
 ├── venv/                          # Virtual environment (sau khi tạo)
 ├── manga_renamer.py              # Công cụ đổi tên manga
 ├── video_thumbnail_generator.py  # Công cụ tạo thumbnail video
+├── audio_thumbnail_generator.py  # Công cụ extract thumbnail từ nhạc
+├── advanced_rename_tool.py       # Công cụ đổi tên file nâng cao
+├── folder_analyzer.py            # Phân tích cấu trúc thư mục
 ├── requirements.txt              # Danh sách thư viện Python
+├── setup.bat                     # Script setup cho Windows
+├── setup.sh                      # Script setup cho Unix/macOS
 └── README.md                     # File hướng dẫn này
 ```
 
@@ -179,6 +262,13 @@ python -m venv venv --copies
 - ✅ Bỏ qua file đã tồn tại
 - ✅ Log chi tiết quá trình
 
+### Audio Thumbnail Generator:
+- ✅ Extract album art từ metadata
+- ✅ Hỗ trợ MP3, FLAC, M4A, OGG
+- ✅ Tự động nhận diện JPG/PNG
+- ✅ Tạo folder thumbnail đại diện
+- ✅ Lựa chọn vị trí lưu file
+
 ## 🛠️ Troubleshooting
 
 ### Virtual Environment không hoạt động:
@@ -199,6 +289,15 @@ python -m venv venv
 1. Tải lại từ official website
 2. Kiểm tra PATH environment
 3. Restart system sau khi cài đặt
+
+### Lỗi mutagen không tìm thấy:
+```bash
+# Cài đặt trong virtual environment
+pip install mutagen
+
+# Hoặc cài đặt từ requirements.txt
+pip install -r requirements.txt
+```
 
 ## 📝 Ghi chú
 

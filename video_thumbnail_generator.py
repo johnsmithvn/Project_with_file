@@ -69,6 +69,17 @@ class VideoThumbnailGenerator:
         ttk.Checkbutton(options_frame, text="Bỏ qua file thumbnail đã tồn tại", 
                        variable=self.skip_existing).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
         
+        # Thumbnail mode
+        ttk.Label(options_frame, text="Vị trí thumbnail:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.thumbnail_mode = tk.StringVar(value="folder")
+        mode_frame = ttk.Frame(options_frame)
+        mode_frame.grid(row=3, column=1, padx=(5, 0), sticky=tk.W)
+        
+        ttk.Radiobutton(mode_frame, text="Trong folder .thumbnail", 
+                       variable=self.thumbnail_mode, value="folder").pack(side=tk.LEFT)
+        ttk.Radiobutton(mode_frame, text="Cùng cấp với video", 
+                       variable=self.thumbnail_mode, value="same").pack(side=tk.LEFT, padx=(10, 0))
+        
         # Log area
         ttk.Label(main_frame, text="Log:").grid(row=3, column=0, sticky=tk.W, pady=(20, 5))
         
@@ -128,6 +139,21 @@ class VideoThumbnailGenerator:
         
         return video_files
     
+    def get_thumbnail_path(self, video_file):
+        """Lấy đường dẫn thumbnail dựa trên mode đã chọn"""
+        video_dir = os.path.dirname(video_file)
+        video_name = Path(video_file).stem
+        
+        if self.thumbnail_mode.get() == "folder":
+            # Mode: Trong folder .thumbnail
+            thumbnail_dir = os.path.join(video_dir, ".thumbnail")
+            thumbnail_path = os.path.join(thumbnail_dir, f"{video_name}.jpg")
+            return thumbnail_path, thumbnail_dir
+        else:
+            # Mode: Cùng cấp với video
+            thumbnail_path = os.path.join(video_dir, f"{video_name}.jpg")
+            return thumbnail_path, video_dir
+    
     def scan_videos(self):
         """Scan và hiển thị danh sách video"""
         if not self.selected_path.get():
@@ -146,9 +172,12 @@ class VideoThumbnailGenerator:
         self.log_message(f"✅ Tìm thấy {len(video_files)} file video:")
         
         for i, video_file in enumerate(video_files[:20]):  # Hiển thị 20 file đầu
-            thumb_path = Path(video_file).with_suffix('.jpg')
-            status = "✅ Có thumbnail" if thumb_path.exists() else "❌ Chưa có thumbnail"
-            self.log_message(f"  {i+1}. {Path(video_file).name} - {status}")
+            # Kiểm tra thumbnail theo mode đã chọn
+            thumb_path, _ = self.get_thumbnail_path(video_file)
+            
+            status = "✅ Có thumbnail" if os.path.exists(thumb_path) else "❌ Chưa có thumbnail"
+            relative_path = os.path.relpath(video_file, self.selected_path.get())
+            self.log_message(f"  {i+1}. {relative_path} - {status}")
         
         if len(video_files) > 20:
             self.log_message(f"  ... và {len(video_files) - 20} file khác")
@@ -163,7 +192,8 @@ class VideoThumbnailGenerator:
                 video_path
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, 
+                                  encoding='utf-8', errors='ignore', timeout=30)
             
             if result.returncode == 0:
                 duration_str = result.stdout.strip()
@@ -176,30 +206,44 @@ class VideoThumbnailGenerator:
             self.log_message(f"⚠️  Lỗi khi lấy duration: {e}")
             return None
     
-    def generate_thumbnail(self, video_path, output_path, timestamp):
-        """Tạo thumbnail bằng ffmpeg"""
+    def generate_thumbnail(self, video_path, timestamp):
+        """Tạo thumbnail bằng ffmpeg theo mode đã chọn"""
         try:
+            # Lấy đường dẫn thumbnail theo mode
+            thumbnail_path, thumbnail_dir = self.get_thumbnail_path(video_path)
+            
+            # Tạo thư mục nếu cần (chỉ với mode folder)
+            if self.thumbnail_mode.get() == "folder" and not os.path.exists(thumbnail_dir):
+                os.makedirs(thumbnail_dir)
+            
+            # Kiểm tra thumbnail đã tồn tại
+            if os.path.exists(thumbnail_path) and self.skip_existing.get():
+                return True, thumbnail_path
+            
             cmd = [
                 'ffmpeg', '-y', '-ss', str(timestamp),
                 '-i', video_path,
                 '-vframes', '1',
                 '-vf', f'scale={self.scale_var.get()}',
-                output_path
+                thumbnail_path
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            result = subprocess.run(cmd, capture_output=True, text=True, 
+                                  encoding='utf-8', errors='ignore', timeout=60)
             
-            return result.returncode == 0
+            return result.returncode == 0, thumbnail_path
             
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError) as e:
             self.log_message(f"⚠️  Lỗi khi tạo thumbnail: {e}")
-            return False
+            return False, None
     
     def check_ffmpeg_available(self):
         """Kiểm tra ffmpeg và ffprobe có available không"""
         try:
-            subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=10)
-            subprocess.run(['ffprobe', '-version'], capture_output=True, timeout=10)
+            subprocess.run(['ffmpeg', '-version'], capture_output=True, 
+                         encoding='utf-8', errors='ignore', timeout=10)
+            subprocess.run(['ffprobe', '-version'], capture_output=True, 
+                         encoding='utf-8', errors='ignore', timeout=10)
             return True
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
@@ -238,15 +282,15 @@ class VideoThumbnailGenerator:
         for video_file in video_files:
             try:
                 # Cập nhật status
-                filename = Path(video_file).name
-                self.current_file.set(f"Đang xử lý: {filename}")
-                self.log_message(f"\n📹 Xử lý: {filename}")
+                relative_path = os.path.relpath(video_file, self.selected_path.get())
+                self.current_file.set(f"Đang xử lý: {relative_path}")
+                self.log_message(f"\n📹 Xử lý: {relative_path}")
                 
-                # Đường dẫn thumbnail
-                thumb_path = Path(video_file).with_suffix('.jpg')
+                # Kiểm tra thumbnail theo mode đã chọn
+                thumbnail_path, _ = self.get_thumbnail_path(video_file)
                 
                 # Kiểm tra thumbnail đã tồn tại
-                if thumb_path.exists() and self.skip_existing.get():
+                if os.path.exists(thumbnail_path) and self.skip_existing.get():
                     self.log_message("✅ Bỏ qua (đã tồn tại)")
                     skipped += 1
                 else:
@@ -268,10 +312,11 @@ class VideoThumbnailGenerator:
                     
                     if duration is not None:
                         # Tạo thumbnail
-                        success = self.generate_thumbnail(video_file, str(thumb_path), timestamp)
+                        success, thumb_path = self.generate_thumbnail(video_file, timestamp)
                         
-                        if success and thumb_path.exists():
-                            self.log_message("✅ Tạo thumbnail thành công!")
+                        if success and thumb_path and os.path.exists(thumb_path):
+                            mode_text = "folder .thumbnail" if self.thumbnail_mode.get() == "folder" else "cùng cấp"
+                            self.log_message(f"✅ Tạo thumbnail thành công ({mode_text}): {os.path.basename(thumb_path)}")
                             generated += 1
                         else:
                             self.log_message("❌ Lỗi khi tạo thumbnail")
